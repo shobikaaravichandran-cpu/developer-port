@@ -1,0 +1,27 @@
+
+name: Deploy Static Portfolio to EC2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/portfolio
+            git pull origin main
+            docker build -t portfolio-img .
+            docker stop portfolio-container || true
+            docker rm portfolio-container || true
+            docker run -d -p 5000:80 --name portfolio-container portfolio-img
